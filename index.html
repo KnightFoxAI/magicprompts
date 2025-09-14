@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MagicPrompt — Trending Image Prompts</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50%25' y='50%25' style='dominant-baseline:central;text-anchor:middle;font-size:80px;'%3E%F0%9F%A4%96%3C/text%3E%3C/svg%3E" />
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+      :root{
+        --bg:#0b1020;
+        --card:#0f1724;
+        --muted:rgba(255,255,255,0.65);
+        --accent: #7c5cff; /* neon-ish */
+        --glass: rgba(255,255,255,0.04);
+      }
+
+      html,body{
+        height:100%;
+        background: radial-gradient(circle at 10% 10%, rgba(124,92,255,0.12), transparent 10%), radial-gradient(circle at 90% 90%, rgba(11,108,255,0.06), transparent 10%), var(--bg);
+        color: #e6eef8;
+        -webkit-font-smoothing:antialiased;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      }
+
+      .container-max{
+        max-width:1200px;
+        /* Mobile padding for container 
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+        */
+      }
+      
+      .brand {
+        font-weight:700;
+        letter-spacing:0.4px;
+        display:flex;align-items:center;gap:.6rem;
+      }
+      
+      .brand .logo{
+        width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#00d4ff);box-shadow:0 6px 18px rgba(124,92,255,0.16), 0 1px 0 rgba(255,255,255,0.03) inset;display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:18px
+      }
+
+      /* Enhanced Search and Filter Styles */
+      .search-container {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin-top: 2rem; /* Added margin for better spacing */
+      }
+
+      .search-input-group {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        padding-left: 0.75rem;
+        transition: all 0.2s ease-in-out;
+        width: 100%; /* Make search bar full width */
+      }
+
+      .search-input-group:focus-within {
+        box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.25);
+      }
+
+      .search-input-group .form-control {
+        background-color: transparent;
+        border: 0;
+        color: #e6eef8;
+        padding-left: 0;
+        outline: none; 
+      }
+      
+      .search-input-group .form-control:focus {
+        border: 0;
+        box-shadow: none;
+      }
+
+      .search-input-group .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.85);
+        opacity: 1;
+      }
+
+      .search-input-group .input-group-text {
+        color: rgba(255, 255, 255, 0.85);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .search-input-group .btn-ghost {
+        color: var(--muted);
+        background: transparent;
+        border: 0;
+      }
+
+      .category-select {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #e6eef8;
+        border-radius: 8px;
+        padding-right: 2rem;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23e6eef8' class='bi bi-chevron-down' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1rem;
+        transition: box-shadow 0.2s ease;
+      }
+      .category-select:hover {
+        box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.25);
+      }
+      .category-select option {
+        color: black;
+      }
+      
+      /* Hero */
+      .hero-header{
+        padding:2rem 1rem;
+        margin-top:14px;
+        margin-bottom:12px;
+        border-radius:16px;
+      }
+
+      .glass-card{
+        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+        border: 1px solid rgba(255,255,255,0.04);
+        border-radius:14px;
+        padding:1rem;
+      }
+
+      /* Trending carousel card */
+      .trend-badge{background:linear-gradient(90deg,var(--accent),#00d4ff);padding:.25rem .6rem;border-radius:999px;color:white;font-weight:600;font-size:.65rem;}
+
+      /* Gallery */
+      .prompt-card{
+        border-radius:12px;
+        overflow:hidden;
+        position:relative;
+        transition:transform .35s ease, box-shadow .35s ease;
+        border:1px solid rgba(255,255,255,0.04);
+        padding: 0.9rem; /* Unified padding for all content */
+      }
+      .prompt-card:hover{transform:translateY(-8px) scale(1.01);box-shadow:0 20px 40px rgba(2,6,23,0.6)}
+
+      .prompt-media{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        margin-bottom: 0.9rem;
+      }
+      .prompt-media img{
+        width: 50%;
+        height: auto;
+        object-fit: cover;
+        display: block;
+      }
+
+      .prompt-body{
+        padding:0;
+      }
+      .prompt-body .content{
+        padding: 0;
+      }
+      /* Smaller title for a cleaner look */
+      .prompt-title{font-weight:700;margin-bottom:6px; font-size: 1.1rem}
+      .prompt-text{
+        font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+        background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+        padding:0.9rem;
+        border-radius:8px;
+        font-size:.85rem;
+      }
+
+      .muted{color:var(--muted)}
+
+      .tag{background:rgba(255,255,255,0.03);padding:.25rem .5rem;border-radius:999px;font-size:0.78rem}
+      
+      /* New style for copy and share buttons */
+      .action-btn {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #e6eef8;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        /* Reduced padding for smaller buttons */
+        padding: 0.2rem 0.5rem;
+        border-radius: 999px;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+        /* Set a smaller font size for the button text/icons */
+        font-size: 0.7rem;
+      }
+      .action-btn.like-btn {
+        /* Reduced gap for the like button */
+        gap: 0.25rem;
+      }
+
+      .action-btn:hover {
+        background: linear-gradient(90deg, var(--accent), #00d4ff);
+        color: white;
+        transform: translateY(-2px);
+        border: 1px solid transparent;
+      }
+      .action-btn.liked {
+        background: #f06;
+        color: white;
+        transform: translateY(-2px);
+        border: 1px solid transparent;
+      }
+      .action-btn.copied {
+        background: linear-gradient(90deg, #4CAF50, #8BC34A);
+        color: white;
+        pointer-events: none;
+      }
+
+      .copy-flash{
+        position:fixed;right:20px;bottom:20px;background:linear-gradient(90deg,var(--accent),#00d4ff);color:white;padding:.7rem 1rem;border-radius:999px;box-shadow:0 10px 30px rgba(12,10,60,0.4);transform:translateY(30px);opacity:0;transition:all .45s ease}
+      .copy-flash.show{transform:translateY(0);opacity:1}
+      
+      /* New footer styles */
+      .app-footer {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        text-align: center;
+      }
+
+      .app-footer hr {
+        border-color: rgba(255, 255, 255, 0.05);
+        margin-bottom: 1.5rem;
+      }
+
+      .footer-links a {
+        color: var(--muted);
+        text-decoration: none;
+        transition: color 0.2s ease;
+        font-size: 0.85rem;
+      }
+
+      .footer-links a:hover {
+        color: #fff;
+      }
+
+      .footer-tagline {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.4);
+      }
+
+      /* Enhanced carousel buttons */
+      .carousel-control-prev,
+      .carousel-control-next {
+        width: 2rem; /* Reduced size */
+        height: 2rem; /* Reduced size */
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 50%;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .carousel-control-prev:hover,
+      .carousel-control-next:hover {
+        background: linear-gradient(135deg, var(--accent), #00d4ff);
+        border-color: transparent;
+        box-shadow: 0 4px 15px rgba(124, 92, 255, 0.3);
+      }
+
+      .carousel-control-prev-icon,
+      .carousel-control-next-icon {
+        width: 0.8rem; /* Reduced icon size */
+        height: 0.8rem; /* Reduced icon size */
+      }
+      
+      .trending-card-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-bottom: 0;
+      }
+      
+      .trending-card-tagline {
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+
+      @media (min-width: 768px) {
+        .container-max {
+          padding-left: 0;
+          padding-right: 0;
+        }
+      }
+
+    </style>
+  </head>
+  <body>
+
+    <div class="container container-max py-3">
+      <!-- Merged header section into a single glass card -->
+      <div class="glass-card p-3">
+        <!-- Top row: Brand -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div class="brand">
+            <div class="logo">AI</div>
+            <div>
+              <div style="font-size:0.95rem">MagicPrompt</div>
+              <div style="font-size:0.72rem;color:var(--muted)">Trending image prompts</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Bottom row: Hero text and carousel -->
+        <div>
+          <div class="d-flex align-items-start justify-content-between gap-3 flex-column flex-md-row">
+            <div>
+              <h1 style="margin:0;font-size:1.2rem;letter-spacing:-0.3px">Explore the latest <span style="background:linear-gradient(90deg,var(--accent),#00d4ff);-webkit-background-clip:text;background-clip:text;color:transparent;">trending AI prompts</span></h1>
+              <p class="muted mb-0" style="max-width:560px; font-size: 0.85rem">A curated feed of high-impact prompts for image generation — view before &amp; after, copy instantly, and share inspiration.</p>
+            </div>
+
+            <!-- This container now holds the dynamic tags from the carousel -->
+            <div id="trendingTagsContainer" class="d-flex flex-wrap gap-2 mt-3 mt-md-0"></div>
+          </div>
+          
+          <div class="mt-3">
+            <div id="trendingCarousel" class="carousel slide" data-bs-ride="carousel">
+              <div class="carousel-inner" id="trendingInner"></div>
+              <button class="carousel-control-prev" type="button" data-bs-target="#trendingCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#trendingCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search and filter section -->
+      <div class="search-container mt-3 mb-3">
+          <div class="d-flex align-items-center input-group search-input-group">
+            <span class="input-group-text bg-transparent border-0 text-white"><i class="bi bi-search"></i></span>
+            <input id="searchInput" class="form-control bg-transparent border-0 text-white ps-0" placeholder="Search prompts..." aria-label="search">
+            <button id="clearSearch" class="btn btn-sm btn-ghost" title="Clear"><i class="bi bi-x-lg"></i></button>
+          </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="d-flex align-items-center justify-content-between mt-3 mb-2">
+        <div class="d-flex gap-2 align-items-center">
+          <div class="muted">Filter:</div>
+          <select id="categoryFilter" class="form-select form-select-sm category-select" style="width:auto;">
+            <option value="all">All categories</option>
+          </select>
+          <div id="tagsContainer" class="d-flex gap-2 flex-wrap"></div>
+        </div>
+        <div class="muted">Showing <span id="resultCount">0</span> prompts</div>
+      </div>
+
+      <!-- Gallery -->
+      <div id="gallery" class="row g-3"></div>
+      
+      <!-- New Footer Section -->
+      <div class="app-footer">
+          <hr />
+          <div class="footer-tagline">
+            Follow for the latest prompts on Instagram!
+          </div>
+          <div class="d-flex justify-content-center gap-4 mt-3">
+            <a href="https://www.instagram.com/" target="_blank" style="font-size:1.8rem; color:var(--muted); text-decoration: none; transition: all 0.2s ease; transform: scale(1);">
+              <i class="bi bi-instagram"></i>
+            </a>
+          </div>
+      </div>
+
+      <div id="copyFlash" class="copy-flash">Prompt copied!</div>
+
+    </div>
+
+    <!-- Bootstrap bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+      import { getDatabase, ref, get, child, update } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+      // Global variable to store fetched prompts
+      let prompts = [];
+
+      // Firebase config
+      const firebaseConfig = {
+        apiKey: "AIzaSyCjCMvVJR_6HnfWGe1XqGxbAKq5drEfm8A",
+        authDomain: "magicprompt-f366d.firebaseapp.com",
+        databaseURL: "https://magicprompt-f366d-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "magicprompt-f366d",
+        storageBucket: "magicprompt-f366d.firebasestorage.app",
+        messagingSenderId: "101709802306",
+        appId: "1:101709802306:web:f25140618660572f7eb6db",
+        measurementId: "G-HFKM97SQ6R"
+      };
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+
+      // Utilities
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+      // State
+      let state = { filter: 'all', tagFilter: [], search: '' };
+
+      async function init(){
+        await fetchPromptsFromFirebase();
+        populateCategories();
+        renderTrending();
+        // Initial call to set the tags for the first carousel item
+        updateTrendingTags(0);
+        renderGallery();
+        attachUI();
+      }
+
+      async function fetchPromptsFromFirebase() {
+        try {
+          const dbRef = ref(db);
+          const snapshot = await get(child(dbRef, 'prompts'));
+          if (snapshot.exists()) {
+            prompts = Object.values(snapshot.val());
+            // Ensure all prompts have a 'copies' property
+            prompts.forEach(p => {
+              if (!p.copies) p.copies = 0;
+              if (!p.shares) p.shares = 0;
+              if (!p.likes) p.likes = 0;
+            });
+            console.log("Prompts loaded from Firebase:", prompts);
+          } else {
+            console.log("No data available from Firebase.");
+            prompts = [];
+          }
+        } catch (error) {
+          console.error("Error fetching data from Firebase:", error);
+          prompts = [];
+        }
+      }
+
+      function populateCategories(){
+        const cats = ['all', ...new Set(prompts.map(p => p.category))];
+        const sel = $('#categoryFilter');
+        sel.innerHTML = '';
+        cats.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c;
+          opt.textContent = c;
+          sel.appendChild(opt);
+        });
+      }
+
+      function trendingItems(){
+        // Sort by likes in descending order and get the top 5
+        const top5 = prompts.slice().sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 5);
+        // Assign a dynamic rank to each item
+        return top5.map((item, index) => ({
+          ...item,
+          rank: index + 1
+        }));
+      }
+
+      function renderTrending(){
+        const inner = $('#trendingInner');
+        inner.innerHTML = '';
+        const items = trendingItems();
+        items.forEach((it, idx) => {
+          const active = idx === 0 ? 'active' : '';
+          const el = document.createElement('div');
+          el.className = 'carousel-item ' + active;
+          el.innerHTML = `
+            <div class="d-flex align-items-center gap-3">
+              <div style="width:90px;height:60px;overflow:hidden;border-radius:10px;flex:0 0 90px;"><img src="${it.after}" alt="${it.title}" style="width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.src='https://placehold.co/90x60/0a1a38/6366f1?text=Image'"></div>
+              <div style="flex-grow:1;">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                  <div class="trending-card-title">${it.title}</div>
+                </div>
+                <div class="mt-1">
+                  <span class="trend-badge">🔥 Trending #${it.rank}</span>
+                </div>
+                <!-- Moved action buttons inside this div -->
+                <div class="d-flex gap-2 mt-2">
+                  <button class="btn btn-sm action-btn like-btn" data-id="${it.id}" title="Like this prompt">
+                    <i class="bi bi-heart"></i>
+                    <span id="like-count-trending-${it.id}">${it.likes}</span>
+                  </button>
+                  <button class="btn btn-sm action-btn copy-btn" data-id="${it.id}" title="Copy prompt">
+                    <i class="bi bi-clipboard"></i>
+                    <span id="copy-count-trending-${it.id}">${it.copies}</span>
+                  </button>
+                  <button class="btn btn-sm action-btn share-btn" data-id="${it.id}" title="Share">
+                    <i class="bi bi-share"></i>
+                    <span id="share-count-trending-${it.id}">${it.shares}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+          inner.appendChild(el);
+        });
+        
+        $$('#trendingInner .copy-btn').forEach(b => b.addEventListener('click', onCopy));
+        $$('#trendingInner .like-btn').forEach(b => b.addEventListener('click', onLike));
+        $$('#trendingInner .share-btn').forEach(b => b.addEventListener('click', onShare));
+      }
+
+      // Function to update the dynamic tags above the carousel
+      function updateTrendingTags(index) {
+        const container = $('#trendingTagsContainer');
+        const items = trendingItems();
+        if (items.length > index) {
+          const currentItem = items[index];
+          container.innerHTML = ''; // Clear existing tags
+          currentItem.tags.forEach(tag => {
+            const tagEl = document.createElement('span');
+            tagEl.className = 'tag';
+            tagEl.textContent = tag;
+            container.appendChild(tagEl);
+          });
+        }
+      }
+
+      function matchesFilter(p){
+        if(state.filter !== 'all' && p.category !== state.filter) return false;
+        if(state.search){
+          const s = state.search.toLowerCase();
+          if(!(p.title.toLowerCase().includes(s) || p.prompt.toLowerCase().includes(s) || (p.tags && p.tags.join(' ').toLowerCase().includes(s)))) return false;
+        }
+        if(state.tagFilter.length > 0){
+          if(!state.tagFilter.every(t => p.tags.includes(t))) return false;
+        }
+        return true;
+      }
+
+      function renderGallery(){
+        const gallery = $('#gallery');
+        gallery.innerHTML = '';
+        const visible = prompts.filter(matchesFilter);
+        $('#resultCount').textContent = visible.length;
+        visible.forEach(p => {
+          const col = document.createElement('div');
+          col.className = 'col-12 col-sm-6 col-lg-4';
+          col.innerHTML = `
+            <div class="prompt-card glass-card">
+              <div class="prompt-media">
+                <img src="${p.before}" alt="before" onerror="this.onerror=null;this.src='https://placehold.co/100x100/0a1a38/6366f1?text=Image'">
+                <img src="${p.after}" alt="after" onerror="this.onerror=null;this.src='https://placehold.co/100x100/0a1a38/6366f1?text=Image'">
+              </div>
+              <div class="prompt-body">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                  <div class="prompt-title">${p.title}</div>
+                  <div class="muted" style="font-size:.82rem">${p.category}</div>
+                  <div class="d-flex flex-wrap gap-1">
+                    ${p.tags.map(t => `<span class='tag'>${t}</span>`).join(' ')}
+                  </div>
+                </div>
+              </div>
+              <div class="prompt-text mt-3" id="prompt-${p.id}">${escapeHtml(p.prompt)}</div>
+              <div class="d-flex justify-content-center gap-2 mt-3">
+                <button class="btn btn-sm action-btn like-btn" data-id="${p.id}" title="Like this prompt">
+                  <i class="bi bi-heart"></i>
+                  <span id="like-count-${p.id}">${p.likes}</span>
+                </button>
+                <button class="btn btn-sm action-btn copy-btn" data-id="${p.id}" title="Copy prompt">
+                  <i class="bi bi-clipboard"></i>
+                  <span id="copy-count-${p.id}">${p.copies}</span>
+                </button>
+                <button class="btn btn-sm action-btn share-btn" data-id="${p.id}" title="Share">
+                  <i class="bi bi-share"></i>
+                  <span id="share-count-${p.id}">${p.shares}</span>
+                </button>
+              </div>
+            </div>
+          `;
+          gallery.appendChild(col);
+        });
+
+        $$('.like-btn').forEach(b => b.addEventListener('click', onLike));
+        $$('.copy-btn').forEach(b => b.addEventListener('click', onCopy));
+        $$('.share-btn').forEach(b => b.addEventListener('click', onShare));
+      }
+
+      function escapeHtml(s){
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      }
+      
+      async function updateCountInFirebase(id, countType) {
+        const promptRef = ref(db, `prompts/${id}`);
+        try {
+          const updates = {};
+          updates[countType] = prompts.find(p => p.id === id)[countType];
+          await update(promptRef, updates);
+          console.log(`Updated ${countType} for prompt ${id} in Firebase.`);
+        } catch (e) {
+          console.error("Error updating count:", e);
+        }
+      }
+      
+      function onLike(e) {
+        const id = e.currentTarget.dataset.id;
+        const item = prompts.find(x => x.id === id);
+        if (item) {
+          item.likes = (item.likes || 0) + 1;
+          $(`#like-count-${id}`) ? $(`#like-count-${id}`).textContent = item.likes : '';
+          $(`#like-count-trending-${id}`) ? $(`#like-count-trending-${id}`).textContent = item.likes : '';
+          updateCountInFirebase(id, 'likes');
+          e.currentTarget.classList.add('liked');
+          // Re-render trending after a like to reflect the change
+          renderTrending();
+        }
+      }
+
+      function onCopy(e){
+        const id = e.currentTarget.dataset.id;
+        const item = prompts.find(x => x.id === id);
+        const button = e.currentTarget;
+
+        // Increment copy count locally and in Firebase
+        if (item) {
+          item.copies = (item.copies || 0) + 1;
+          $(`#copy-count-${id}`) ? $(`#copy-count-${id}`).textContent = item.copies : '';
+          $(`#copy-count-trending-${id}`) ? $(`#copy-count-trending-${id}`).textContent = item.copies : '';
+          updateCountInFirebase(id, 'copies');
+        }
+
+        const promptText = item.prompt;
+        const el = document.createElement('textarea');
+        el.value = promptText;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.classList.remove('copied');
+        }, 1800);
+      }
+
+      function onShare(e){
+        const id = e.currentTarget.dataset.id;
+        const item = prompts.find(x => x.id === id);
+
+        // Increment shares count locally and in Firebase
+        if (item) {
+          item.shares = (item.shares || 0) + 1;
+          $(`#share-count-${id}`) ? $(`#share-count-${id}`).textContent = item.shares : '';
+          $(`#share-count-trending-${id}`) ? $(`#share-count-trending-${id}`).textContent = item.shares : '';
+          updateCountInFirebase(id, 'shares');
+        }
+        
+        const shareData = { title: item.title, text: item.prompt};
+        if(navigator.share){
+          navigator.share(shareData).catch(()=>{});
+        } else {
+          const text = encodeURIComponent(item.prompt + '\nUse #PromptPlayground');
+          const url = 'https://twitter.com/intent/tweet?text=' + text;
+          window.open(url, '_blank');
+        }
+      }
+
+      function attachUI(){
+        $('#categoryFilter').addEventListener('change', (e) => {
+          state.filter = e.target.value;
+          renderGallery();
+        });
+        $('#searchInput').addEventListener('input', debounce((e) => {
+          state.search = e.target.value;
+          renderGallery();
+        }, 220));
+        $('#clearSearch').addEventListener('click', () => {
+          $('#searchInput').value = '';
+          state.search = '';
+          renderGallery();
+        });
+        
+        // Listen for carousel slide event to update the tags
+        const trendingCarousel = $('#trendingCarousel');
+        if (trendingCarousel) {
+          trendingCarousel.addEventListener('slide.bs.carousel', function (event) {
+            updateTrendingTags(event.to);
+          });
+        }
+      }
+
+      // small debounce
+      function debounce(fn, ms){
+        let t;
+        return (...a) => {
+          clearTimeout(t);
+          t = setTimeout(() => fn.apply(this, a), ms);
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+    </script>
+  </body>
+</html>
